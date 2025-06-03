@@ -7,8 +7,8 @@ def fp(w, X):
 
 def somax(r):
     # Softmax along classes axis (axis=1) for batch
-    e = np.exp(r - np.max(r, axis=1, keepdims=True))  # stability trick
-    return e / np.sum(e, axis=1, keepdims=True)
+    e = np.exp(r - np.max(r))  # stability trick
+    return e / np.sum(e)
 
 def cce(y_true, y_pred):
     # Average cross-entropy loss over batch
@@ -65,3 +65,9 @@ update = wtupdate(lr, X, grad)
 w -= update
 
 print(f"Updated weights:\n{w}")
+
+x_softmax = np.array([-2, -1, 0, 1, 2])
+y_softmax = somax(x_softmax)
+import matplotlib.pyplot as plt
+plt.plot(x_softmax, y_softmax, 'o-')  # markers with line
+plt.show()
