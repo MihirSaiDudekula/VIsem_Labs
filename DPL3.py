@@ -69,3 +69,71 @@ Y = np.array([[1, 0, 0],
 
 model = ANN()
 model.train(X, Y, epochs=100)
+
+
+Program 3 : Implement Simple ANN with Activation and loss function
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def softmax(x):
+    exp_x = np.exp(x - np.max(x))  # Stability improvement
+    return exp_x / np.sum(exp_x, axis=1, keepdims=True)
+
+def relu(x):
+    return np.maximum(0, x)
+
+def relu_derivative(x):
+    return (x > 0).astype(float)
+
+def categorical_cross_entropy(y_true, y_pred):
+    y_pred = np.clip(y_pred, 1e-12, 1. - 1e-12)  # avoid log(0)
+    return -np.sum(y_true * np.log(y_pred)) / y_true.shape[0]
+
+def categorical_cross_entropy_derivative(y_true, y_pred):
+    return y_pred - y_true
+
+# Simple ANN with one hidden layer
+class SimpleANN:
+    def _init_(self, input_size, hidden_size, output_size, learning_rate=0.1):
+        self.learning_rate = learning_rate
+        self.weights_input_hidden = np.random.randn(input_size, hidden_size) * 0.01
+        self.weights_hidden_output = np.random.randn(hidden_size, output_size) * 0.01
+        self.bias_hidden = np.zeros((1, hidden_size))
+        self.bias_output = np.zeros((1, output_size))
+
+    def forward_pass(self, X):
+        self.hidden_layer_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
+        self.hidden_layer_output = relu(self.hidden_layer_input)
+        self.output_layer_input = np.dot(self.hidden_layer_output, self.weights_hidden_output) + self.bias_output
+        self.y_pred = softmax(self.output_layer_input)
+        return self.y_pred
+
+
+    def backward_pass(self, X, y_true):
+        loss_derivative = categorical_cross_entropy_derivative(y_true, self.y_pred)
+        d_weights_hidden_output = np.dot(self.hidden_layer_output.T, loss_derivative) / X.shape[0]
+        d_bias_output = np.sum(loss_derivative, axis=0, keepdims=True) / X.shape[0]
+
+        hidden_layer_error = np.dot(loss_derivative, self.weights_hidden_output.T) * relu_derivative(self.hidden_layer_input)
+        d_weights_input_hidden = np.dot(X.T, hidden_layer_error) / X.shape[0]
+        d_bias_hidden = np.sum(hidden_layer_error, axis=0, keepdims=True) / X.shape[0]
+
+        self.weights_hidden_output -= self.learning_rate * d_weights_hidden_output
+        self.bias_output -= self.learning_rate * d_bias_output
+        self.weights_input_hidden -= self.learning_rate * d_weights_input_hidden
+        self.bias_hidden -= self.learning_rate * d_bias_hidden
+
+    def train(self, X, y_true, epochs=100):
+        for epoch in range(epochs):
+            y_pred = self.forward_pass(X)
+            self.backward_pass(X, y_true)
+            if epoch % 10 == 0:
+                loss = categorical_cross_entropy(y_true, y_pred)
+                print(f"Epoch {epoch}, Loss: {loss:.4f}")
+
+#data
+X_sample = np.array([[0.5, 1.5], [1.0, 2.0], [1.5, 2.5]])
+y_true = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+ann = SimpleANN(input_size=2, hidden_size=4, output_size=3, learning_rate=0.1)
+ann.train(X_sample, y_true, epochs=100)

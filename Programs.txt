@@ -1,0 +1,719 @@
+# First Lab Program: Implement training rate and all activation functions.
+import numpy as np
+import matplotlib.pyplot as plt
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def tanh(x):
+    return np.tanh(x)
+
+def relu(x):
+    return np.maximum(0, x)
+
+def leaky_relu(x, alpha=0.01):
+    return np.where(x > 0, x, alpha * x)
+
+def softmax(x):
+    exp_x = np.exp(x - np.max(x))  # Stability improvement
+    return exp_x / np.sum(exp_x)
+
+def adjust_learning_rate(initial_lr, epoch, decay_rate=0.1, decay_epoch=10):
+    return initial_lr * (1 / (1 + decay_rate * (epoch // decay_epoch)))
+
+# input values
+x = np.linspace(-5, 5, 100)
+
+# Plot activation functions
+fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+axes = axes.ravel()
+
+functions = [(sigmoid, "Sigmoid"), (tanh, "Tanh"), (relu, "ReLU"), (leaky_relu, "Leaky ReLU")]
+
+for i, (func, title) in enumerate(functions):
+    y = func(x)
+    axes[i].plot(x, y)
+    axes[i].set_title(title)
+    axes[i].grid()
+
+# Softmax applied to vectors
+x_softmax = np.linspace(-2, 2, 5)  
+y_softmax = softmax(x_softmax)
+axes[4].plot(x_softmax, y_softmax, marker='o')
+axes[4].set_title("Softmax")
+axes[4].grid()
+# Hide the last empty subplot
+axes[5].axis("off")
+plt.tight_layout()
+plt.show()
+x_sample = np.array([-2, -1, 0, 1, 2])
+print("Sigmoid:", sigmoid(x_sample))
+print("Tanh:", tanh(x_sample))
+print("ReLU:", relu(x_sample))
+print("Leaky ReLU:", leaky_relu(x_sample))
+print("Softmax:", softmax(x_sample))
+
+# training rate adjustment
+initial_lr = 0.1
+epoch = 20
+print("Adjusted Learning Rate:", adjust_learning_rate(initial_lr, epoch))
+
+#Program 2: Implement Categorical cross entropy Loss function with forward and backward pass
+import numpy as np
+import matplotlib.pyplot as plt
+
+def softmax(x):
+    exp_x = np.exp(x - np.max(x))  # Stability improvement
+    return exp_x / np.sum(exp_x)
+
+def categorical_cross_entropy(y_true, y_pred):
+    y_pred = np.clip(y_pred, 1e-12, 1. - 1e-12)  # Avoid log(0)
+    return -np.sum(y_true * np.log(y_pred)) / y_true.shape[0]
+
+def categorical_cross_entropy_derivative(y_true, y_pred):
+    return y_pred - y_true
+
+def adjust_learning_rate(initial_lr, epoch, decay_rate=0.1, decay_epoch=10):
+    return initial_lr * (1 / (1 + decay_rate * (epoch // decay_epoch)))
+
+def forward_pass(X, weights):
+    logits = np.dot(X, weights)
+    y_pred = softmax(logits)
+    return y_pred
+
+def backward_pass(X, y_true, y_pred, learning_rate):
+    gradient = categorical_cross_entropy_derivative(y_true, y_pred)
+    weights_update = np.dot(X.T, gradient) / X.shape[0]
+    return weights_update * learning_rate
+
+# softmax input
+x_softmax = np.array([-2, -1, 0, 1, 2])
+y_softmax = softmax(x_softmax)
+# Plot Softmax 
+plt.figure(figsize=(6, 4))
+plt.plot(x_softmax, y_softmax, marker='o', label='Softmax Output')
+plt.title("Softmax Activation Function")
+plt.xlabel("Input")
+plt.ylabel("Probability")
+plt.grid()
+plt.legend()
+plt.show()
+# Input features
+X_sample = np.array([[1.0, 2.0], [1.5, 2.5], [2.0, 3.0]]) 
+#weights
+weights = np.array([[0.2, -0.3, 0.5], [-0.5, 0.7, -0.2]])
+# One-hot encoded labels
+y_true = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]]) 
+# Forward pass
+y_pred = forward_pass(X_sample, weights)
+loss = categorical_cross_entropy(y_true, y_pred)
+# Backward pass
+learning_rate = 0.1
+weight_update = backward_pass(X_sample, y_true, y_pred, learning_rate)
+print("Predicted Probabilities:", y_pred)
+print("Categorical Cross-Entropy Loss:", loss)
+print("Gradient of Loss:", weight_update)
+# Adjust learning rate
+initial_lr = 0.1
+epoch = 20
+print("Adjusted Learning Rate:", adjust_learning_rate(initial_lr, epoch))
+
+
+Program 3 : Implement Simple ANN with Activation and loss function
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def softmax(x):
+    exp_x = np.exp(x - np.max(x))  # Stability improvement
+    return exp_x / np.sum(exp_x, axis=1, keepdims=True)
+
+def relu(x):
+    return np.maximum(0, x)
+
+def relu_derivative(x):
+    return (x > 0).astype(float)
+
+def categorical_cross_entropy(y_true, y_pred):
+    y_pred = np.clip(y_pred, 1e-12, 1. - 1e-12)  # avoid log(0)
+    return -np.sum(y_true * np.log(y_pred)) / y_true.shape[0]
+
+def categorical_cross_entropy_derivative(y_true, y_pred):
+    return y_pred - y_true
+
+# Simple ANN with one hidden layer
+class SimpleANN:
+    def _init_(self, input_size, hidden_size, output_size, learning_rate=0.1):
+        self.learning_rate = learning_rate
+        self.weights_input_hidden = np.random.randn(input_size, hidden_size) * 0.01
+        self.weights_hidden_output = np.random.randn(hidden_size, output_size) * 0.01
+        self.bias_hidden = np.zeros((1, hidden_size))
+        self.bias_output = np.zeros((1, output_size))
+
+    def forward_pass(self, X):
+        self.hidden_layer_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
+        self.hidden_layer_output = relu(self.hidden_layer_input)
+        self.output_layer_input = np.dot(self.hidden_layer_output, self.weights_hidden_output) + self.bias_output
+        self.y_pred = softmax(self.output_layer_input)
+        return self.y_pred
+
+
+    def backward_pass(self, X, y_true):
+        loss_derivative = categorical_cross_entropy_derivative(y_true, self.y_pred)
+        d_weights_hidden_output = np.dot(self.hidden_layer_output.T, loss_derivative) / X.shape[0]
+        d_bias_output = np.sum(loss_derivative, axis=0, keepdims=True) / X.shape[0]
+
+        hidden_layer_error = np.dot(loss_derivative, self.weights_hidden_output.T) * relu_derivative(self.hidden_layer_input)
+        d_weights_input_hidden = np.dot(X.T, hidden_layer_error) / X.shape[0]
+        d_bias_hidden = np.sum(hidden_layer_error, axis=0, keepdims=True) / X.shape[0]
+
+        self.weights_hidden_output -= self.learning_rate * d_weights_hidden_output
+        self.bias_output -= self.learning_rate * d_bias_output
+        self.weights_input_hidden -= self.learning_rate * d_weights_input_hidden
+        self.bias_hidden -= self.learning_rate * d_bias_hidden
+
+    def train(self, X, y_true, epochs=100):
+        for epoch in range(epochs):
+            y_pred = self.forward_pass(X)
+            self.backward_pass(X, y_true)
+            if epoch % 10 == 0:
+                loss = categorical_cross_entropy(y_true, y_pred)
+                print(f"Epoch {epoch}, Loss: {loss:.4f}")
+
+#data
+X_sample = np.array([[0.5, 1.5], [1.0, 2.0], [1.5, 2.5]])
+y_true = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+ann = SimpleANN(input_size=2, hidden_size=4, output_size=3, learning_rate=0.1)
+ann.train(X_sample, y_true, epochs=100)
+
+
+Program 4: Study the effect of batch normalization and dropout in neural network classifier.
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+
+# Load MNIST Dataset
+transform = transforms.Compose([transforms.ToTensor()])
+train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+# Define a Simple Feedforward Neural Network
+class SimpleNN(nn.Module):
+    def __init__(self, use_bn=False, use_dropout=False):
+        super(SimpleNN, self).__init__()
+        self.fc1 = nn.Linear(28*28, 256)
+        self.bn1 = nn.BatchNorm1d(256) if use_bn else nn.Identity()
+        self.dropout1 = nn.Dropout(0.5) if use_dropout else nn.Identity()
+        self.fc2 = nn.Linear(256, 10)
+
+    def forward(self, x):
+        x = x.view(-1, 28*28)  # Flatten input
+        x = self.fc1(x)
+        x = self.bn1(x)   # Apply Batch Norm (if enabled)
+        x = torch.relu(x)
+        x = self.dropout1(x)  # Apply Dropout (if enabled)
+        x = self.fc2(x)
+        return x
+
+def train_and_evaluate(model, optimizer, criterion, epochs=5):
+    for epoch in range(epochs):
+        model.train()
+        for images, labels in train_loader:
+            optimizer.zero_grad()
+            output = model(images)
+            loss = criterion(output, labels)
+            loss.backward()
+            optimizer.step()
+
+    # Evaluate the model
+    model.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for images, labels in test_loader:
+            output = model(images)
+            _, predicted = torch.max(output, 1)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
+
+    accuracy = 100 * correct / total
+    return accuracy
+
+model_basic = SimpleNN()
+model_bn = SimpleNN(use_bn=True)
+model_dropout = SimpleNN(use_dropout=True)
+
+# Define Loss and Optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer_basic = optim.Adam(model_basic.parameters(), lr=0.001)
+optimizer_bn = optim.Adam(model_bn.parameters(), lr=0.001)
+optimizer_dropout = optim.Adam(model_dropout.parameters(), lr=0.001)
+
+# Train and Evaluate Models
+acc_basic = train_and_evaluate(model_basic, optimizer_basic, criterion)
+acc_bn = train_and_evaluate(model_bn, optimizer_bn, criterion)
+acc_dropout = train_and_evaluate(model_dropout, optimizer_dropout, criterion)
+
+
+print(f"Accuracy without BN & Dropout: {acc_basic:.2f}%")
+print(f"Accuracy with Batch Normalization: {acc_bn:.2f}%")
+print(f"Accuracy with Dropout: {acc_dropout:.2f}%")
+
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+
+Program 5 :  Implement a Simple CNN to compare performance of any two optimizers on a same dataset.
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+
+# Load CIFAR-10 Dataset
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
+
+train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+# Define a Simple CNN
+class SimpleCNN(nn.Module):
+    def __init__(self):
+        super(SimpleCNN, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.fc1 = nn.Linear(64 * 8 * 8, 128)
+        self.fc2 = nn.Linear(128, 10)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
+        x = x.view(-1, 64 * 8 * 8)  # Flatten
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+# Training Function
+def train_and_evaluate(model, optimizer, criterion, epochs=5):
+    train_losses, test_losses, test_accuracies = [], [], []
+    
+    for epoch in range(epochs):
+        model.train()
+        running_loss = 0.0
+        for images, labels in train_loader:
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+
+        avg_train_loss = running_loss / len(train_loader)
+        train_losses.append(avg_train_loss)
+
+        # Evaluate Model
+        model.eval()
+        test_loss, correct, total = 0.0, 0, 0
+        with torch.no_grad():
+            for images, labels in test_loader:
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+                test_loss += loss.item()
+                _, predicted = torch.max(outputs, 1)
+                correct += (predicted == labels).sum().item()
+                total += labels.size(0)
+
+        avg_test_loss = test_loss / len(test_loader)
+        test_losses.append(avg_test_loss)
+        accuracy = 100 * correct / total
+        test_accuracies.append(accuracy)
+
+        print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {avg_train_loss:.4f}, Test Loss: {avg_test_loss:.4f}, Accuracy: {accuracy:.2f}%")
+
+    return train_losses, test_losses, test_accuracies
+
+# Initialize Models
+model_sgd = SimpleCNN()
+model_adam = SimpleCNN()
+
+# Define Loss Function
+criterion = nn.CrossEntropyLoss()
+
+# Define Optimizers
+optimizer_sgd = optim.SGD(model_sgd.parameters(), lr=0.01, momentum=0.9)
+optimizer_adam = optim.Adam(model_adam.parameters(), lr=0.001)
+
+# Train & Evaluate Models
+print("Training with SGD Optimizer:")
+train_sgd, test_sgd, acc_sgd = train_and_evaluate(model_sgd, optimizer_sgd, criterion)
+
+print("\nTraining with Adam Optimizer:")
+train_adam, test_adam, acc_adam = train_and_evaluate(model_adam, optimizer_adam, criterion)
+
+# Plot Performance Comparison
+epochs = range(1, 6)
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.plot(epochs, train_sgd, label='SGD - Train Loss')
+plt.plot(epochs, test_sgd, label='SGD - Test Loss')
+plt.plot(epochs, train_adam, label='Adam - Train Loss')
+plt.plot(epochs, test_adam, label='Adam - Test Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.title('Loss Comparison')
+
+plt.subplot(1, 2, 2)
+plt.plot(epochs, acc_sgd, label='SGD - Accuracy')
+plt.plot(epochs, acc_adam, label='Adam - Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy (%)')
+plt.legend()
+plt.title('Accuracy Comparison')
+
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+
+Program 6
+
+import tensorflow as tf
+from tensorflow.keras import layers, models, datasets
+
+(x_train, _), (x_test, _) = datasets.mnist.load_data()
+x_train = x_train[..., None]/255.0
+x_test = x_test[..., None]/255.0
+
+#  Make blurry inputs 
+x_train_blur = tf.image.resize(x_train, (14,14))
+x_train_blur = tf.image.resize(x_train_blur, (28,28))
+
+x_test_blur = tf.image.resize(x_test, (14,14))
+x_test_blur = tf.image.resize(x_test_blur, (28,28))
+
+
+def simple_unet(input_shape):
+    inputs = layers.Input(shape=input_shape)
+    x = layers.Conv2D(32, 3, activation='relu', padding='same')(inputs)
+    x = layers.MaxPooling2D()(x)
+    x = layers.Conv2D(64, 3, activation='relu', padding='same')(x)
+    x = layers.Conv2DTranspose(32, 3, strides=2, padding='same', activation='relu')(x)
+    outputs = layers.Conv2D(1, 1, activation='sigmoid')(x)
+    return models.Model(inputs, outputs)
+
+model = simple_unet((28,28,1))
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+
+model.fit(x_train_blur, x_train, epochs=5, batch_size=64, validation_split=0.1)
+
+predicted = model.predict(x_test_blur[:5])
+
+import matplotlib.pyplot as plt
+for i in range(5):
+    plt.figure(figsize=(8,2))
+    plt.subplot(1,3,1)
+    plt.title("Blurry Input")
+    plt.imshow(x_test_blur[i].numpy().squeeze(), cmap='gray') 
+    plt.axis('off')
+    plt.subplot(1,3,2)
+    plt.title("Ground Truth")
+    plt.imshow(x_test[i].squeeze(), cmap='gray')
+    plt.axis('off')
+    plt.subplot(1,3,3)
+    plt.title("Predicted Mask")
+    plt.imshow(predicted[i].squeeze(), cmap='gray')
+    plt.axis('off')
+    plt.show()
+
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+
+Program 9
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+
+class SimpleRNNModel(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(SimpleRNNModel, self).__init__()
+        self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)
+        self.fc = nn.Linear(hidden_size, output_size)
+        
+    def forward(self, x):
+        out, _ = self.rnn(x)           # RNN output: (batch, seq_len, hidden)
+        out = out[:, -1, :]            # Take the output of the last time step
+        out = self.fc(out)             # Dense layer
+        return out
+
+# Hyperparameters
+input_size = 8      # Features per time step
+hidden_size = 32    # Number of RNN hidden units
+output_size = 1     # Binary classification (use >1 for multi-class)
+seq_len = 10
+batch_size = 16
+
+# Generate random input and target data
+X = torch.randn(batch_size, seq_len, input_size)  # Shape: (batch, seq_len, input_size)
+y = torch.randint(0, 2, (batch_size, 1)).float()   # Binary targets
+print(X)
+print(y)
+
+model = SimpleRNNModel(input_size, hidden_size, output_size)
+criterion = nn.BCEWithLogitsLoss()  
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+for epoch in range(10):
+    outputs = model(X)
+    loss = criterion(outputs, y)
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    print(f"Epoch [{epoch+1}/10], Loss: {loss.item():.4f}")
+
+
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+
+Program 10
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+text = "hello world, this is a simple text generation using LSTMs."
+
+# character vocabulary
+chars = sorted(set(text))  # Unique characters
+char_to_idx = {c: i for i, c in enumerate(chars)}
+idx_to_char = {i: c for i, c in enumerate(chars)}
+
+# Convert text into sequences
+seq_length = 10
+data_X, data_Y = [], []
+for i in range(len(text) - seq_length):
+    input_seq = text[i:i+seq_length]
+    target_char = text[i+seq_length]
+    data_X.append([char_to_idx[c] for c in input_seq])
+    data_Y.append(char_to_idx[target_char])
+
+# Convert to PyTorch tensors
+X_train = torch.tensor(data_X, dtype=torch.long)
+y_train = torch.tensor(data_Y, dtype=torch.long)
+
+
+class TextLSTM(nn.Module):
+    def __init__(self, vocab_size, embed_size, hidden_size):
+        super(TextLSTM, self).__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_size)
+        self.lstm = nn.LSTM(embed_size, hidden_size, batch_first=True)
+        self.fc = nn.Linear(hidden_size, vocab_size)
+
+    def forward(self, x):
+        x = self.embedding(x)
+        lstm_out, _ = self.lstm(x)
+        out = self.fc(lstm_out[:, -1, :])  # Take last output for prediction
+        return out
+
+vocab_size = len(chars)
+embed_size = 16
+hidden_size = 128
+model = TextLSTM(vocab_size, embed_size, hidden_size)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+
+num_epochs = 50
+for epoch in range(num_epochs):
+    optimizer.zero_grad()
+    outputs = model(X_train)
+    loss = criterion(outputs, y_train)
+    loss.backward()
+    optimizer.step()
+
+
+def generate_text(start_seq, length=50):
+    model.eval()
+    input_seq = [char_to_idx[c] for c in start_seq]
+    input_tensor = torch.tensor([input_seq], dtype=torch.long)
+    generated_text = start_seq
+    for _ in range(length):
+        with torch.no_grad():
+            output = model(input_tensor)
+            predicted_idx = torch.argmax(output, dim=1).item()
+            predicted_char = idx_to_char[predicted_idx]
+            generated_text += predicted_char
+            input_tensor = torch.tensor([[*input_seq[1:], predicted_idx]], dtype=torch.long)
+            input_seq = input_seq[1:] + [predicted_idx]
+    return generated_text
+
+
+print("\nGenerated Text:")
+print(generate_text("hello wor", 50))
+
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+
+Program 11
+
+import torch
+import torch.nn as nn
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, embed_size, heads):
+        super(MultiHeadAttention, self).__init__()
+        self.embed_size = embed_size
+        self.heads = heads
+        self.head_dim = embed_size // heads
+
+        assert self.head_dim * heads == embed_size, "Embedding size must be divisible by heads"
+
+        # Linear layers to project input into Q, K, V
+        self.values = nn.Linear(embed_size, embed_size)
+        self.keys = nn.Linear(embed_size, embed_size)
+        self.queries = nn.Linear(embed_size, embed_size)
+        self.fc_out = nn.Linear(embed_size, embed_size)  # Final projection
+
+    def forward(self, value, key, query, mask=None):
+        N = query.shape[0]  # Batch size
+        value_len, key_len, query_len = value.shape[1], key.shape[1], query.shape[1]
+
+        # Transform input into multiple heads
+        values = self.values(value).view(N, value_len, self.heads, self.head_dim).transpose(1, 2)
+        keys = self.keys(key).view(N, key_len, self.heads, self.head_dim).transpose(1, 2)
+        queries = self.queries(query).view(N, query_len, self.heads, self.head_dim).transpose(1, 2)
+
+        # Scaled Dot-Product Attention
+        energy = torch.matmul(queries, keys.transpose(-2, -1)) / (self.head_dim ** 0.5)
+
+        if mask is not None:
+            energy = energy.masked_fill(mask == 0, float("-1e20"))  # Masking for padding tokens
+
+        attention = torch.softmax(energy, dim=-1)
+
+        out = torch.matmul(attention, values)
+        out = out.transpose(1, 2).contiguous().view(N, query_len, self.embed_size)
+
+        return self.fc_out(out)  # Final linear layer
+
+
+embed_size = 128  # Dimension of embeddings
+heads = 8  # Number of attention heads
+attention = MultiHeadAttention(embed_size, heads)
+
+x = torch.rand(2, 10, embed_size)  # (batch_size=2, seq_len=10, embed_size=128)
+output = attention(x, x, x)
+print(output.shape)
+
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+Program 12
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+!pip install torchvision
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, Subset
+# Device configuration (use GPU if available)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Data transformation
+transform = transforms.Compose([
+    transforms.ToTensor()
+])
+#  MNIST dataset
+train_dataset = datasets.MNIST(root="./data", train=True, download=True, transform=transform)
+test_dataset = datasets.MNIST(root="./data", train=False, download=True, transform=transform)
+# Use subsets for quick training
+train_subset = Subset(train_dataset, range(200))
+test_subset = Subset(test_dataset, range(50))
+# DataLoader
+train_loader = DataLoader(train_subset, batch_size=10, shuffle=True)
+test_loader = DataLoader(test_subset, batch_size=10, shuffle=False)
+class AutoEncoder(nn.Module):
+    def __init__(self):
+        super(AutoEncoder, self).__init__()
+        self.encoder = nn.Sequential(
+            nn.Linear(28*28, 256),
+            nn.ReLU(inplace=True),
+            nn.Linear(256, 64),
+            nn.ReLU(inplace=True)  # Added activation after last encoder layer
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(64, 256),
+            nn.ReLU(inplace=True),
+            nn.Linear(256, 28*28),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
+
+# Initialize model, optimizer, and loss function
+model = AutoEncoder().to(device)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+criterion = nn.MSELoss()
+def train_model(num_epochs):
+    for epoch in range(num_epochs):
+        model.train()
+        train_loss = 0.0
+
+        for data in train_loader:
+            img, _ = data
+            img = img.view(img.size(0), -1).to(device)  # Flatten and move to device
+            output = model(img)
+            loss = criterion(output, img)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()
+
+        avg_train_loss = train_loss / len(train_loader)
+        model.eval()
+        test_loss = 0.0
+        with torch.no_grad():
+            for data in test_loader:
+                img, _ = data
+                img = img.view(img.size(0), -1).to(device)
+                output = model(img)
+                loss = criterion(output, img)
+                test_loss += loss.item()
+
+        avg_test_loss = test_loss / len(test_loader)
+        print(f'Epoch {epoch+1}, Train Loss: {avg_train_loss:.4f}, Test Loss: {avg_test_loss:.4f}')
+
+
+train_model(10)
